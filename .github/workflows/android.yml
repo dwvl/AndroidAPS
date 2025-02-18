@@ -24,8 +24,11 @@ jobs:
     #  run: |
     #    ls -aR ${{ github.workspace }}
 
-    - name: Build release apk
+    - name: Build release apk (Phone)
       run: ./gradlew app:assembleFullRelease
+
+    - name: Build release apk (Wear)
+      run: ./gradlew wear:assembleFullRelease
 
     #- name: List files in the repository
     #  run: |
@@ -38,7 +41,7 @@ jobs:
         echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
         echo Last build tool version is: $BUILD_TOOL_VERSION
         
-    - name: Sign App
+    - name: Sign App (Phone)
       uses: r0adkll/sign-android-release@v1
       id: sign_app
       with:
@@ -50,11 +53,29 @@ jobs:
       env:
         BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
 
-    - name: Upload APK Release
+    - name: Sign App (Wear)
+      uses: r0adkll/sign-android-release@v1
+      id: sign_app_wear
+      with:
+        releaseDirectory: wear/build/outputs/apk/full/release  # Ensure correct path for Wear OS
+        signingKeyBase64: ${{ secrets.SIGNING_KEY }}  # Reusing the same signing key
+        alias: 'key0'
+        keyStorePassword: 'David1keystore'
+        keyPassword: 'David1key'
+      env:
+        BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+
+    - name: Upload APK Release (Phone)
       uses: actions/upload-artifact@v4
       with:
         name: APK release generated
-        path: app/build/outputs/apk/full/release
+        path: app/build/outputs/apk/full/release/app-full-release-signed.apk
+
+    - name: Upload APK Release (Wear)
+      uses: actions/upload-artifact@v4
+      with:
+        name: APK release generated (Wear)
+        path: wear/build/outputs/apk/full/release/wear-full-release-signed.apk  # Assumed path
 
     #- name: Releasing using Hub
     #  uses: sangatdesai/release-apk@main
